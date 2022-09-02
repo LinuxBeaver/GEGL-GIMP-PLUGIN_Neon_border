@@ -1,5 +1,4 @@
 
-You need to build clay.so/dll zzmediangraph.so/dll and zzopacity.so/dll and put them in /gegl-0.4/plug-ins 
 ## Compiling and Installing
 
 ### Linux
