@@ -22,6 +22,13 @@
 
 #ifdef GEGL_PROPERTIES
 
+property_color (string, _("ZZ"), "#ff2000")
+    ui_meta     ("role", "output-extent")
+
+property_color (string2, _("ZZ2"), "#ff2000")
+    description(_("The color to make transparent."))
+    ui_meta     ("role", "output-extent")
+
 
 
 property_int (box, _("Smooth edges"), 1)
@@ -169,11 +176,11 @@ static void attach (GeglOperation *operation)
  
 
   zzoutline   = gegl_node_new_child (gegl,
-                                  "operation", "gegl:zzoutline",
+                                  "operation", "gegl:color-overlay",
                                   NULL);
 
   zzoutline2   = gegl_node_new_child (gegl,
-                                  "operation", "gegl:zzoutline2",
+                                  "operation", "gegl:color-to-alpha",
                                   NULL);
 
 
@@ -247,6 +254,10 @@ gegl_operation_meta_redirect (operation, "y2", stroke2, "y");
 
 
   gegl_operation_meta_redirect (operation, "opacityglow", opacity, "value");
+
+  gegl_operation_meta_redirect (operation, "string", zzoutline, "value");
+
+  gegl_operation_meta_redirect (operation, "string2", zzoutline2, "color");
 
 
 
