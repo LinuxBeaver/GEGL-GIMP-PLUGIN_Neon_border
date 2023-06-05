@@ -31,67 +31,32 @@ property_color (string2, _("ZZ2"), "#ff2000")
 
 
 
-property_int (box, _("Smooth edges"), 1)
-   description(_("Radius of square pixel region, (width and height will be radius*2+1)"))
-   value_range (0, 2)
-   ui_range    (0, 2)
-   ui_gamma   (1.5)
-
-property_color (colorneon, _("Color"), "#ffffff")
+property_color (colorneon, _("Color (recommended white)"), "#ffffff")
 
 
 property_color  (colorneon2, _("Color 2"), "#00ff27")
-
-
-property_double (x, _("X"), 0.0)
-  description   (_("Horizontal shadow offset"))
-  ui_range      (-1, 3)
-  ui_steps      (-1, 3)
-  ui_meta       ("unit", "pixel-distance")
-  ui_meta       ("axis", "x")
-
-property_double (y, _("Y"), 0.0)
-  description   (_("Vertical shadow offset"))
-  ui_range      (-1, 3)
-  ui_steps      (-1, 3)
-  ui_meta       ("unit", "pixel-distance")
-  ui_meta       ("axis", "y")
-
-
-property_double (x2, _("X2"), 0.0)
-  description   (_("Horizontal shadow offset"))
-  ui_range      (-1, 3)
-  ui_steps      (-1, 3)
-  ui_meta       ("unit", "pixel-distance")
-  ui_meta       ("axis", "x")
-
-property_double (y2, _("Y2"), 0.0)
-  description   (_("Vertical shadow offset"))
-  ui_range      (-1, 3)
-  ui_steps      (-1, 3)
-  ui_meta       ("unit", "pixel-distance")
-  ui_meta       ("axis", "y")
-
+  description   (_("The glow's color (defaults to a green)"))
+/*This is having a problem. The color sometimes does not update
+until Gimp's clipping setting is changed from Adjust to Clip.
+I think it needs to be inside a composer - beaver*/
 
 property_double (blurstroke, _("Blur radius"), 2.2)
   value_range   (0.0, G_MAXDOUBLE)
-  ui_range      (0.0, 20.0)
+  ui_range      (0.0, 14.0)
   ui_steps      (1, 5)
   ui_gamma      (1.5)
   ui_meta       ("unit", "pixel-distance")
 
 property_double (blurstroke2, _("Blur radius 2"), 4.3)
   value_range   (0.0, G_MAXDOUBLE)
-  ui_range      (0.0, 20.0)
+  ui_range      (0.0, 14.0)
   ui_steps      (1, 5)
   ui_gamma      (1.5)
   ui_meta       ("unit", "pixel-distance")
 
-
-
 property_double (stroke, _("Grow radius 1"), 9.0)
   value_range   (0, 50.0)
-  ui_range      (0, 30.0)
+  ui_range      (0, 20.0)
   ui_digits     (0)
   ui_steps      (1, 5)
   ui_gamma      (1.5)
@@ -107,20 +72,16 @@ property_double (stroke2, _("Grow radius 2"), 2.1)
   ui_meta       ("unit", "pixel-distance")
   description (_("The distance to expand the shadow before blurring; a negative value will contract the shadow instead"))
 
-property_double (opacity, _("Opacity"), 2)
-  value_range   (0.0, 2.0)
+property_double (opacity, _("Opacity"), 1.2)
+  value_range   (0.0, 1.3)
   ui_steps      (0.01, 0.10)
 
-property_double (opacity2, _("Opacity 2"), 1)
-  value_range   (0.0, 2.0)
+property_double (opacity2, _("Opacity 2"), 1.2)
+  value_range   (0.0, 1.3)
   ui_steps      (0.01, 0.10)
 
-
-
-property_color (color2, _("Color of glow"), "#96f8d0")
+property_color (colorblur, _("Color of glow"), "#96f8d0")
     description (_("The color to paint over the input"))
-
-
 
 
 property_double (gaus, _("Gaussian Glow X"), 10)
@@ -148,7 +109,7 @@ property_double (opacityglow, _("Opacity of Glow"), 0.40)
 static void attach (GeglOperation *operation)
 {
   GeglNode *gegl = operation->node;
-  GeglNode *input, *output, *zzoutline, *stroke, *stroke2, *zzoutline2, *color, *color2, *box, *nop, *behind, *opacity, *gaussian;
+  GeglNode *input, *output, *zzoutline, *stroke, *crop, *stroke2, *zzoutline2, *color, *colorblur, *box, *nop, *behind, *opacity, *gaussian;
 
 
   input    = gegl_node_get_input_proxy (gegl, "input");
@@ -159,123 +120,64 @@ static void attach (GeglOperation *operation)
                                   "operation", "gegl:color-overlay",
                                   NULL);
 
-  color2   = gegl_node_new_child (gegl,
+  colorblur   = gegl_node_new_child (gegl,
                                   "operation", "gegl:color-overlay",
                                   NULL);
 
 
   behind   = gegl_node_new_child (gegl,
-                                  "operation", "gimp:behind",
+                                  "operation", "gegl:dst-over",
                                   NULL);
 
   opacity   = gegl_node_new_child (gegl,
                                   "operation", "gegl:opacity",
                                   NULL);
 
- 
- 
-
-  zzoutline   = gegl_node_new_child (gegl,
+   zzoutline   = gegl_node_new_child (gegl,
                                   "operation", "gegl:color-overlay",
                                   NULL);
 
   zzoutline2   = gegl_node_new_child (gegl,
-                                  "operation", "gegl:color-to-alpha",
-                                  NULL);
-
-
-  gaussian    = gegl_node_new_child (gegl,
+                                  "operation", "gegl:color-to-alpha",  "transparency-threshold", 0.5, NULL);
+                          
+ gaussian    = gegl_node_new_child (gegl,
                                   "operation", "gegl:gaussian-blur",
                                   NULL);
 
+  stroke      = gegl_node_new_child (gegl, "operation", "gegl:dropshadow", "x", 0.0, "y", 0.0,  NULL);
 
-  stroke    = gegl_node_new_child (gegl,
-                                  "operation", "gegl:dropshadow",
-                                  NULL);
-
-  stroke2    = gegl_node_new_child (gegl,
-                                  "operation", "gegl:dropshadow",
-                                  NULL);
-
+  stroke2     = gegl_node_new_child (gegl, "operation", "gegl:dropshadow", "x", 0.0, "y", 0.0,  NULL);
+                                         
   box    = gegl_node_new_child (gegl,
-                                  "operation", "gegl:box-blur",
-                                  NULL);
-
+                                  "operation", "gegl:box-blur", "radius", 1,  NULL);
   nop    = gegl_node_new_child (gegl,
                                   "operation", "gegl:nop",
                                   NULL);
 
-
-
-
-
-
-
-
-
+  crop    = gegl_node_new_child (gegl,
+                                  "operation", "gegl:crop",
+                                  NULL);
 
 
   gegl_operation_meta_redirect (operation, "gaus", gaussian, "std-dev-x");
-
   gegl_operation_meta_redirect (operation, "gaus2", gaussian, "std-dev-y");
-
   gegl_operation_meta_redirect (operation, "colorneon", color, "value");
-
-
   gegl_operation_meta_redirect (operation, "colorneon2", stroke2, "color");
-
-
-
   gegl_operation_meta_redirect (operation, "stroke", stroke, "grow-radius");
-
   gegl_operation_meta_redirect (operation, "blurstroke", stroke, "radius");
-
-gegl_operation_meta_redirect (operation, "stroke2", stroke2, "grow-radius");
-
-gegl_operation_meta_redirect (operation, "x", stroke, "x");
-
-gegl_operation_meta_redirect (operation, "x2", stroke2, "x");
-
-gegl_operation_meta_redirect (operation, "y", stroke, "y");
-
-gegl_operation_meta_redirect (operation, "y2", stroke2, "y");
-
+  gegl_operation_meta_redirect (operation, "stroke2", stroke2, "grow-radius");
   gegl_operation_meta_redirect (operation, "blurstroke2", stroke2, "radius");
-
   gegl_operation_meta_redirect (operation, "opacity", stroke, "opacity");
-
   gegl_operation_meta_redirect (operation, "opacity2", stroke2, "opacity");
-
-
-  gegl_operation_meta_redirect (operation, "box", box, "radius");
-
-
-  gegl_operation_meta_redirect (operation, "color2", color2, "value");
-
-
+  gegl_operation_meta_redirect (operation, "colorblur", colorblur, "value");
   gegl_operation_meta_redirect (operation, "opacityglow", opacity, "value");
-
   gegl_operation_meta_redirect (operation, "string", zzoutline, "value");
-
   gegl_operation_meta_redirect (operation, "string2", zzoutline2, "color");
 
 
-
-
-
-
-
-
-
-
-
-
-
-  gegl_node_link_many (input, zzoutline, stroke, zzoutline2, color, stroke2, box, nop, behind, output, NULL);
-
- gegl_node_link_many (nop, opacity, color2, gaussian, NULL);
+  gegl_node_link_many (input, zzoutline, stroke, zzoutline2, color, stroke2, crop, box, nop, behind, output, NULL);
+ gegl_node_link_many (nop, opacity, colorblur, gaussian, NULL);
 gegl_node_connect_from (behind, "aux", gaussian, "output"); 
-
 
 
 }
@@ -294,7 +196,7 @@ gegl_op_class_init (GeglOpClass *klass)
     "title",       _("Neon Border"),
     "categories",  "Aristic",
     "reference-hash", "33do6a1h2a00xn3v25sb2ac",
-    "description", _("Neon Border text styling filter. To use color 2 you must first change the 'clipping' box setting from 'adjust' to 'clip'. Sorry for the inconvenience.  "
+    "description", _("Neon Border text styling filter."
                      ""),
     NULL);
 }
