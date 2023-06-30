@@ -1,6 +1,8 @@
 # GEGL-Neon-Border
-Make Neon border Text styling and specialty outlines with GEGL. You must build neon-border.so/dll and put it in /gegl-0.4/plug-ins. This filter requires you to manually change a clipping mode in the filter dialog.
-![image preview](neonpreview.png )
+Make Neon border Text styling and specialty outlines with GEGL. 
+![image](https://github.com/LinuxBeaver/GEGL-Neon-Border/assets/78667207/8cb768b6-eb20-4537-9b59-a6efcd251533)
+
+![image](https://github.com/LinuxBeaver/GEGL-Neon-Border/assets/78667207/57928ee8-5e76-41fd-ad4b-32f5a371fc99)
 
 Neon Border
 =========
