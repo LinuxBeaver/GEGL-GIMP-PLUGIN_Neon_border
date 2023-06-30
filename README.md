@@ -1,8 +1,10 @@
-# GEGL-Neon-Border
-Make Neon border Text styling and specialty outlines with GEGL. 
-![image](https://github.com/LinuxBeaver/GEGL-Neon-Border/assets/78667207/8cb768b6-eb20-4537-9b59-a6efcd251533)
+# GEGL Neon Border - Gimp Plugin to make Neon Border text.
 
-![image](https://github.com/LinuxBeaver/GEGL-Neon-Border/assets/78667207/57928ee8-5e76-41fd-ad4b-32f5a371fc99)
+Make Neon border Text styling and specialty outlines with GEGL. 
+![image](https://github.com/LinuxBeaver/GEGL-Neon-Border/assets/78667207/61a95ca0-e129-4b92-8b4d-1dfe7cba3215)
+
+
+![image](https://github.com/LinuxBeaver/GEGL-Neon-Border/assets/78667207/8cb768b6-eb20-4537-9b59-a6efcd251533)
 
 Neon Border
 =========
