@@ -207,6 +207,8 @@ gegl_op_class_init (GeglOpClass *klass)
     "reference-hash", "33do6a1h2a00xn3v25sb2ac",
     "description", _("Neon Border text styling filter."
                      ""),
+    "gimp:menu-path", "<Image>/Filters/Text Styling",
+    "gimp:menu-label", _("Neon Border..."),
     NULL);
 }
 
