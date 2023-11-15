@@ -201,9 +201,8 @@ gegl_op_class_init (GeglOpClass *klass)
   operation_class->attach = attach;
 
   gegl_operation_class_set_keys (operation_class,
-    "name",        "gegl:neon-border",
+    "name",        "lb:neon-border",
     "title",       _("Neon Border"),
-    "categories",  "Artistic",
     "reference-hash", "33do6a1h2a00xn3v25sb2ac",
     "description", _("Neon Border text styling filter."
                      ""),
