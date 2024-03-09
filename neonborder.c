@@ -186,7 +186,7 @@ static void attach (GeglOperation *operation)
 
   gegl_node_link_many (input, zzoutline, stroke, zzoutline2, color, stroke2, crop, box, nop, behind, output, NULL);
  gegl_node_link_many (nop, opacity, colorblur, gaussian, NULL);
-gegl_node_connect_from (behind, "aux", gaussian, "output"); 
+gegl_node_connect (behind, "aux", gaussian, "output"); 
 
 
 }
