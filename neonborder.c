@@ -223,7 +223,7 @@ static void update_graph (GeglOperation *operation)
   GeglProperties *o = GEGL_PROPERTIES (operation);
   State *state = o->user_data;
   if (!state) return;  
-  GeglNode *crop;
+  GeglNode *crop = state->crop;
 
   if (o->clipbugpolicy) crop = state->newnop;
   if (!o->clipbugpolicy) crop = state->crop;
@@ -231,7 +231,7 @@ static void update_graph (GeglOperation *operation)
 gegl_node_link_many (state->input, state->zzoutline, state->stroke, state->zzoutline2, state->color, state->stroke2, crop, state->box, state->nop, state->behind, state->output, NULL);
 gegl_node_link_many (state->nop, state->opacity, state->colorblur, state->gaussian, NULL);
 gegl_node_connect (state->behind, "aux", state->gaussian, "output"); 
-gegl_node_connect (state->crop, "aux", state->input, "output"); 
+
 
 }
     
