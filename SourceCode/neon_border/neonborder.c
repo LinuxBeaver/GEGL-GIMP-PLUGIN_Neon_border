@@ -77,12 +77,12 @@ property_double (stroke2, _("Grow radius 2"), 2.1)
   ui_meta       ("unit", "pixel-distance")
   description (_("The distance to expand the shadow before blurring; a negative value will contract the shadow instead"))
 
-property_double (opacity, _("Opacity"), 1.2)
-  value_range   (0.0, 1.3)
+property_double (opacity, _("Opacity"), 1.0)
+  value_range   (0.0, 1.0)
   ui_steps      (0.01, 0.10)
 
-property_double (opacity2, _("Opacity 2"), 1.2)
-  value_range   (0.0, 1.3)
+property_double (opacity2, _("Opacity 2"), 1.0)
+  value_range   (0.0, 1.0)
   ui_steps      (0.01, 0.10)
 
 property_color (colorblur, _("Color of glow"), "#96f8d0")
