@@ -17,8 +17,6 @@
  * 2022 Beaver (GEGL neon border)
  */
 
-
-
 /* 
 GEGL GRAPH OF NEON BORDER, *may not be 100% accurate. If you paste below in Gimp's
 GEGL Graph you can test this filter without installing it.
@@ -35,12 +33,30 @@ id=1 dst-over aux=[ ref=1 gaussian-blur std-dev-y=50 std-dev-x=5 opacity value=0
 
 #ifdef GEGL_PROPERTIES
 
+property_boolean (policy, _("Merge with Image"), FALSE)
+  description    (_("Should the neon border merge with the image content or be alone? "))
+
+property_boolean (huemode, _("Hue rotation mode"), FALSE)
+  description    (_("Forget about some color pickers and just rotate the hue"))
+
+property_double (hue, _("Hue Rotation"), 0.0)
+  value_range   (-180, 180)
+  ui_range      (-180, 180)
+  ui_steps      (1, 5)
+  ui_gamma      (1.5)
+  ui_meta       ("unit", "pixel-distance")
+  ui_meta     ("sensitive", " huemode")
+   ui_meta ("visible", " huemode")
 
 property_color (colorneon, _("Color (recommended white)"), "#ffffff")
+  description   (_("Changing this will ruin the neon border effect but feel free to do whatever you want"))
 
 
 property_color  (colorneon2, _("Color 2"), "#00ff27")
   description   (_("The glow's color (defaults to a green)"))
+  ui_meta     ("sensitive", "! huemode")
+   ui_meta ("visible", "! huemode")
+
 /*This is having a problem. The color sometimes does not update
 until Gimp's clipping setting is changed from Adjust to Clip.
 I think it needs to be inside a composer - beaver, UPDATE BUG SOLVED IN MID 2023*/
@@ -87,7 +103,8 @@ property_double (opacity2, _("Opacity 2"), 1.0)
 
 property_color (colorblur, _("Color of glow"), "#96f8d0")
     description (_("The color to paint over the input"))
-
+  ui_meta     ("sensitive", "! huemode")
+   ui_meta ("visible", "! huemode")
 
 property_double (gaus, _("Gaussian Glow X"), 10)
    description (_("Standard deviation for the horizontal axis"))
@@ -119,19 +136,26 @@ typedef struct
   GeglNode *input;
   GeglNode *output;
   GeglNode *newnop;
-  GeglNode *zzoutline;
+  GeglNode *coloroverlay;
   GeglNode *stroke;
   GeglNode *crop;
   GeglNode *stroke2;
-  GeglNode *zzoutline2;
+  GeglNode *c2a;
   GeglNode *color;
+  GeglNode *replace;
+  GeglNode *normal;
   GeglNode *colorblur;
   GeglNode *box;
   GeglNode *huelight;
   GeglNode *nop;
+  GeglNode *crop2;
   GeglNode *behind;
   GeglNode *opacity;
+  GeglNode *nothinghue;
+  GeglNode *hue;
   GeglNode *gaussian;
+  GeglNode *stroke2alt;
+ GeglNode  *colorblurstatic;
 } State; 
 
 
@@ -141,23 +165,30 @@ static void attach (GeglOperation *operation)
   GeglProperties *o = GEGL_PROPERTIES (operation);
   GeglColor *neonhiddencolor1 = gegl_color_new ("#ff2000");
   GeglColor *neonhiddencolor2 = gegl_color_new ("#ff2000");
+  GeglColor *staticcolor = gegl_color_new ("#00ff27");
+  GeglColor *staticcolorblur = gegl_color_new ("#96f8d0");
 
 
   State *state = o->user_data = g_malloc0 (sizeof (State));
-
-
 
     state->input    = gegl_node_get_input_proxy (gegl, "input");
     state->output   = gegl_node_get_output_proxy (gegl, "output");
 
 
     state->color   = gegl_node_new_child (gegl,
-                                  "operation", "gegl:color-overlay",
+                                  "operation", "gegl:color-overlay", 
                                   NULL);
 
     state->colorblur   = gegl_node_new_child (gegl,
                                   "operation", "gegl:color-overlay",
                                   NULL);
+
+
+
+    state->colorblurstatic   = gegl_node_new_child (gegl,
+                                  "operation", "gegl:color-overlay",  "value", staticcolorblur,
+                                  NULL);
+
 
 
     state->behind   = gegl_node_new_child (gegl,
@@ -168,12 +199,12 @@ static void attach (GeglOperation *operation)
                                   "operation", "gegl:opacity",
                                   NULL);
 
-     state->zzoutline   = gegl_node_new_child (gegl,
+     state->coloroverlay   = gegl_node_new_child (gegl,
                                   "operation", "gegl:color-overlay",
                                    "value", neonhiddencolor1, NULL);
                                   
 
-    state->zzoutline2   = gegl_node_new_child (gegl,
+    state->c2a   = gegl_node_new_child (gegl,
                                   "operation", "gegl:color-to-alpha",  "transparency-threshold", 0.5,
                                    "color", neonhiddencolor2, NULL);
                           
@@ -185,6 +216,9 @@ static void attach (GeglOperation *operation)
 
     state->stroke2     = gegl_node_new_child (gegl, "operation", "gegl:dropshadow", "x", 0.0, "y", 0.0,  NULL);
 
+    state->stroke2alt     = gegl_node_new_child (gegl, "operation", "gegl:dropshadow", "x", 0.0, "y", 0.0, "color", staticcolor,  NULL);
+
+
                                          
   state->box    = gegl_node_new_child (gegl,
                                   "operation", "gegl:box-blur", "radius", 1,  NULL);
@@ -193,13 +227,30 @@ static void attach (GeglOperation *operation)
                                   "operation", "gegl:nop",
                                   NULL);
 
+  state->crop2    = gegl_node_new_child (gegl,
+                                  "operation", "gegl:crop",
+                                  NULL);
   state->newnop    = gegl_node_new_child (gegl,
                                   "operation", "gegl:nop",
                                   NULL);
+  state->replace    = gegl_node_new_child (gegl,
+                                  "operation", "gegl:src",   NULL);
 
+  state->normal    = gegl_node_new_child (gegl,
+                                  "operation", "gegl:over",
+                                  NULL);
+                         
 
   state->crop    = gegl_node_new_child (gegl,
                                   "operation", "gegl:crop",
+                                  NULL);
+
+  state->hue    = gegl_node_new_child (gegl,
+                                  "operation", "gegl:hue-chroma",
+                                  NULL);
+
+  state->nothinghue    = gegl_node_new_child (gegl,
+                                  "operation", "gegl:nop",
                                   NULL);
 
   gegl_operation_meta_redirect (operation, "gaus", state->gaussian, "std-dev-x");
@@ -214,6 +265,13 @@ static void attach (GeglOperation *operation)
   gegl_operation_meta_redirect (operation, "opacity2", state->stroke2, "opacity");
   gegl_operation_meta_redirect (operation, "colorblur", state->colorblur, "value");
   gegl_operation_meta_redirect (operation, "opacityglow", state->opacity, "value");
+  gegl_operation_meta_redirect (operation, "hue", state->hue, "hue");
+
+
+
+  gegl_operation_meta_redirect (operation, "stroke2", state->stroke2alt, "grow-radius");
+  gegl_operation_meta_redirect (operation, "blurstroke2", state->stroke2alt, "radius");
+  gegl_operation_meta_redirect (operation, "opacity2", state->stroke2alt, "opacity");
 
 }
 
@@ -224,13 +282,33 @@ static void update_graph (GeglOperation *operation)
   State *state = o->user_data;
   if (!state) return;  
   GeglNode *crop = state->crop;
+  GeglNode *borderpolicy = state->replace;
+  GeglNode *colorblur = state->colorblur;
+  GeglNode *stroke2 = state->stroke2;
+  GeglNode *huechoice = state->hue;
 
   if (o->clipbugpolicy) crop = state->newnop;
   if (!o->clipbugpolicy) crop = state->crop;
 
-gegl_node_link_many (state->input, state->zzoutline, state->stroke, state->zzoutline2, state->color, state->stroke2, crop, state->box, state->nop, state->behind, state->output, NULL);
-gegl_node_link_many (state->nop, state->opacity, state->colorblur, state->gaussian, NULL);
+
+  if (!o->policy) borderpolicy = state->replace;
+  if (o->policy) borderpolicy = state->normal;
+
+  if (!o->huemode) huechoice = state->nothinghue;
+  if (o->huemode) huechoice = state->hue;
+
+  if (!o->huemode) stroke2 = state->stroke2;
+  if (o->huemode) stroke2 = state->stroke2alt;
+
+  if (!o->huemode) colorblur = state->colorblur;
+  if (o->huemode) colorblur = state->colorblurstatic;
+
+gegl_node_link_many (state->input, borderpolicy, state->output, NULL);
+gegl_node_link_many (state->input, state->coloroverlay, state->stroke, state->crop2, state->c2a, state->color, stroke2, crop, state->box, state->nop, state->behind, huechoice, NULL);
+gegl_node_link_many (state->nop, state->opacity, colorblur, state->gaussian, NULL);
 gegl_node_connect (state->behind, "aux", state->gaussian, "output"); 
+gegl_node_connect (state->crop2, "aux", state->input, "output"); 
+gegl_node_connect (borderpolicy, "aux", huechoice, "output"); 
 
 
 }
@@ -250,7 +328,7 @@ GeglOperationMetaClass *operation_meta_class = GEGL_OPERATION_META_CLASS (klass)
     "name",        "lb:neon-border",
     "title",       _("Neon Border"),
     "reference-hash", "33do6a1h2a00xn3v25sb2ac",
-    "description", _("Neon Border text styling filter."
+    "description", _("Neon Border text styling"
                      ""),
     "gimp:menu-path", "<Image>/Filters/Text Styling",
     "gimp:menu-label", _("Neon Border..."),
