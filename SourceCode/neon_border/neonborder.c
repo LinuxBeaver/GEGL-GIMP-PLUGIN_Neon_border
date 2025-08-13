@@ -50,7 +50,7 @@ property_double (hue, _("Hue Rotation"), 0.0)
 
 property_color (colorneon, _("Color (recommended white)"), "#ffffff")
   description   (_("Changing this will ruin the neon border effect but feel free to do whatever you want"))
-
+   ui_meta ("visible", "! huemode")
 
 property_color  (colorneon2, _("Color 2"), "#00ff27")
   description   (_("The glow's color (defaults to a green)"))
@@ -155,7 +155,8 @@ typedef struct
   GeglNode *hue;
   GeglNode *gaussian;
   GeglNode *stroke2alt;
- GeglNode  *colorblurstatic;
+  GeglNode  *colorblurstatic;
+  GeglNode  *colorwhitelock;
 } State; 
 
 
@@ -167,6 +168,8 @@ static void attach (GeglOperation *operation)
   GeglColor *neonhiddencolor2 = gegl_color_new ("#ff2000");
   GeglColor *staticcolor = gegl_color_new ("#00ff27");
   GeglColor *staticcolorblur = gegl_color_new ("#96f8d0");
+  GeglColor *white = gegl_color_new ("#ffffff");
+  GeglColor *white2 = gegl_color_new ("#ffffff");
 
 
   State *state = o->user_data = g_malloc0 (sizeof (State));
@@ -176,7 +179,11 @@ static void attach (GeglOperation *operation)
 
 
     state->color   = gegl_node_new_child (gegl,
-                                  "operation", "gegl:color-overlay", 
+                                  "operation", "gegl:color-overlay", "value", white,
+                                  NULL);
+
+    state->colorwhitelock   = gegl_node_new_child (gegl,
+                                  "operation", "gegl:color-overlay", "value", white2,
                                   NULL);
 
     state->colorblur   = gegl_node_new_child (gegl,
@@ -286,6 +293,7 @@ static void update_graph (GeglOperation *operation)
   GeglNode *colorblur = state->colorblur;
   GeglNode *stroke2 = state->stroke2;
   GeglNode *huechoice = state->hue;
+  GeglNode *colorwhites = state->color;
 
   if (o->clipbugpolicy) crop = state->newnop;
   if (!o->clipbugpolicy) crop = state->crop;
@@ -303,12 +311,17 @@ static void update_graph (GeglOperation *operation)
   if (!o->huemode) colorblur = state->colorblur;
   if (o->huemode) colorblur = state->colorblurstatic;
 
+  if (!o->huemode) colorwhites = state->color;
+  if (o->huemode) colorwhites = state->colorwhitelock;
+
+
 gegl_node_link_many (state->input, borderpolicy, state->output, NULL);
-gegl_node_link_many (state->input, state->coloroverlay, state->stroke, state->crop2, state->c2a, state->color, stroke2, crop, state->box, state->nop, state->behind, huechoice, NULL);
+gegl_node_link_many (state->input, state->coloroverlay, state->stroke, state->crop2, state->c2a, colorwhites, stroke2, crop, state->box, state->nop, state->behind, huechoice, NULL);
 gegl_node_link_many (state->nop, state->opacity, colorblur, state->gaussian, NULL);
 gegl_node_connect (state->behind, "aux", state->gaussian, "output"); 
 gegl_node_connect (state->crop2, "aux", state->input, "output"); 
 gegl_node_connect (borderpolicy, "aux", huechoice, "output"); 
+
 
 
 }
